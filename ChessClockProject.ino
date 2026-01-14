@@ -16,11 +16,19 @@ const uint8_t blackDIO = 5;
 TM1637Display whiteTm(whiteCLK, whiteDIO);
 TM1637Display blackTm(blackCLK, blackDIO);
 
-// 5 minute
+// 5 minutes
 int whiteTime = 500;
 int blackTime = 500;
 
 uint8_t dots = 0b01000000;
+
+// time management
+unsigned long previousMillis = 0;
+const unsigned long interval = 1000;
+
+// state management
+bool whiteRunning = false;
+bool blackRunning = false;
 
 void setup() {
   whiteTm.setBrightness(7, true);
@@ -38,64 +46,76 @@ void setup() {
 }
 
 void loop() {
+  unsigned long currentMillis = millis();
+
   // Red button(Rest Button) pressed
   if (digitalRead(9) == LOW) {
 
-    whiteTm.clear();
-    blackTm.clear();
-    // Reset the both timer to initial value of 5:00
+    //  Reset the both timer to initial value of 5:00
     whiteTime = 500;
     blackTime = 500;
+
+    previousMillis = millis();
+
+    whiteRunning = false;
+    blackRunning = false;
 
     displayHelper(whiteTm, whiteTime);
     displayHelper(blackTm, blackTime);
   }
-  // whiteButton pressed
+
+  // Black button pressed then white runs
   if (digitalRead(10) == LOW) {
-    while (digitalRead(8) != LOW) {
-      whiteTime = countDownHelper(whiteTime);
-      displayHelper(whiteTm, whiteTime);
-      delay(1000);
-      if (whiteTime == 0)
-        break;
-      if (digitalRead(9) == LOW)
-        break;
-    }
+    whiteRunning = true;
+    blackRunning = false;
   }
 
-  // blackButton pressed
+  // White button pressed then black runs
   if (digitalRead(8) == LOW) {
-    while (digitalRead(10) != LOW) {
-      blackTime = countDownHelper(blackTime);
-      displayHelper(blackTm, blackTime);
-      delay(1000);
-      if (blackTime == 0)
-        break;
-      if (digitalRead(9) == LOW)
-        break;
+    whiteRunning = false;
+    blackRunning = true;
+  }
+  // White countdown
+  if (whiteRunning && currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+
+    whiteTime = countDownHelper(whiteTime);
+    displayHelper(whiteTm, whiteTime);
+
+    if (whiteTime == 0)
+      whiteRunning = false;
+  }
+
+  // Black countdown
+  if (blackRunning && currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+
+    blackTime = countDownHelper(blackTime);
+    displayHelper(blackTm, blackTime);
+
+    if (blackTime == 0)
+      blackRunning = false;
+  }
+
+  // helper method for countdown until 00:00
+  int countDownHelper(int timeValue) {
+    int minute = timeValue / 100;
+    int second = timeValue % 100;
+
+    if (minute == 0 && second == 0)
+      return 0;
+
+    if (second == 0) {
+      minute--;
+      second = 59;
+    } else {
+      second--;
     }
-  }
-}
 
-// helper method for countdown until 00:00
-int countDownHelper(int timeValue) {
-  int minute = timeValue / 100;
-  int second = timeValue % 100;
-
-  if (minute == 0 && second == 0)
-    return 0;
-
-  if (second == 0) {
-    minute--;
-    second = 59;
-  } else {
-    second--;
+    return minute * 100 + second;
   }
 
-  return minute * 100 + second;
-}
-
-// helper method for displaying the time
-void displayHelper(TM1637Display &display, int timeValue) {
-  display.showNumberDecEx(timeValue, dots, true);
-}
+  // helper method for displaying the time
+  void displayHelper(TM1637Display & display, int timeValue) {
+    display.showNumberDecEx(timeValue, dots, true);
+  }
