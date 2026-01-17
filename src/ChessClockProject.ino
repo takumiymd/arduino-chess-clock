@@ -13,6 +13,15 @@ const uint8_t whiteDIO = 3;
 const uint8_t blackCLK = 4;
 const uint8_t blackDIO = 5;
 
+// White Button
+const int whiteButton = 8;
+// Reset Button
+const int resetButton = 9;
+// Black Button
+const int blackButton = 10;
+// Buzzer
+// const int buzzerButton = 11;
+
 TM1637Display whiteTm(whiteCLK, whiteDIO);
 TM1637Display blackTm(blackCLK, blackDIO);
 
@@ -34,9 +43,10 @@ void setup() {
   whiteTm.setBrightness(7, true);
   blackTm.setBrightness(7, true);
 
-  pinMode(8, INPUT_PULLUP);  // White Button
-  pinMode(9, INPUT_PULLUP);  // Rest Button
-  pinMode(10, INPUT_PULLUP); // Black Button
+  pinMode(whiteButton, INPUT_PULLUP); // White Button
+  pinMode(resetButton, INPUT_PULLUP); // Rest Button
+  pinMode(blackButton, INPUT_PULLUP); // Black Button
+  // pinMode(buzzerButton, OUTPUT);      // Buzzer
 
   whiteTm.clear();
   blackTm.clear();
@@ -49,7 +59,7 @@ void loop() {
   unsigned long currentMillis = millis();
 
   // Red button(Rest Button) pressed
-  if (digitalRead(9) == LOW) {
+  if (digitalRead(resetButton) == LOW) {
 
     //  Reset the both timer to initial value of 5:00
     whiteTime = 500;
@@ -65,13 +75,13 @@ void loop() {
   }
 
   // Black button pressed then white runs
-  if (digitalRead(10) == LOW) {
+  if (digitalRead(blackButton) == LOW) {
     whiteRunning = true;
     blackRunning = false;
   }
 
   // White button pressed then black runs
-  if (digitalRead(8) == LOW) {
+  if (digitalRead(whiteButton) == LOW) {
     whiteRunning = false;
     blackRunning = true;
   }
